@@ -1,0 +1,70 @@
+
+
+                         
+ 
+ 
+ 
+ 
+ 
+ 
+                 
+ 
+ 
+             
+ 
+ 
+                 
+
+
+                        
+
+
+
+
+
+Un software de advertising al cărui scop era să afişeze reclame oriunde şi oricum a fost descoperit în peste 200 de aplicaţii din magazinul oficial de conţinut pentru Android.
+
+ 
+   Foto: Shutterstock  Descoperirea făcută de experţii în securitatea de la Check Point a scos la iveală un cod folosit pentru advertising care afişa reclame în afara aplicaţiilor în care era folosit. Printre altele, acesta mai redirecţiona utilizatorii către diverse site-uri care afişau reclame şi chiar descărca singur alte aplicaţii.
+        
+        
+            
+
+    
+
+Toate acţiunile adware-ului erau puse în practică pentru a genera venituri din reclame şi diverse programe de afliere.
+Ţinând cont că aplicaţiile afectate însumau aproximativ 150 de milioane de instalări la momentul în care Google le-a eliminat din Play Store, se poate presupune că suma generată astfel nu a fost una mică.
+Software-ul în cauză era promovat ca o soluţie legitimă de advertising, iar dezvoltatorii aplicaţiilor nu ştiau de comportamentul acestuia. Chiar şi aşa, aplicaţiile vizate au fost scoase din Play Store până când codul respectiv va fi eliminat.
+Descoperirea celor de la Check Point continuă lungul şir de incidente similare în care a fost implicat magazinul oficial de aplicaţii pentru Android în ultimii doi ani.
+        
+        
+            
+
+    
+
+De la abuzarea de permisiunile acordate şi reclame pornografice, până prelucrea completă a controlului asupra smartphone-ului, Google a lăsat uşa larg deschisă pentru tot felul de ameninţări la adresa utilizatorilor smartphone-urilor cu Android.
+În paralele cu decoperirea unor noi şi noi probleme, Google se laudă că îşi îmbunătăţeşte constant sistemul de detectarea a aplicaţiilor problematice. Compania americană spune că 99% dintre acestea sunt eliminate înainte să ajună pe telefonul utilizatorilor.
+        
+        
+                    
+    
+
+
+
+
+
+
+
+                        Etichete: 
+
+                                                    smartphone
+                                                        ,
+                                                        tablete
+                                                        ,
+                                                        android
+                                                        ,
+                                                        aplicatii android
+                                                        ,
+                                                        copii cu tablete
+                                                        ,
+                                                        telefoanel inteligente
