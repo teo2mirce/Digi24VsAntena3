@@ -1,3 +1,6 @@
+#pyinstaller -F --hidden-import sklearn.neighbors.typedefs KC.py
+
+
 from collections import Counter
 import numpy as np
 import os
@@ -64,7 +67,9 @@ def KernelFrom2ListsPresence(A,B):
 				ret+=1
 	return ret
 def File2Pgrams(file,pgram=2):
-	oneLongTweet = open(file,encoding='utf8').read()
+	# print(file)
+	# oneLongTweet = open(file,encoding='utf8').read()
+	oneLongTweet = open(file,encoding='ISO-8859-1').read()
 	oneLongTweet = oneLongTweet.lower()
 	oneLongTweet=' '.join(oneLongTweet.split())
 	return Counter([oneLongTweet[i:i + pgram] for i in range(0, len(oneLongTweet )-pgram +1 )])
@@ -96,55 +101,89 @@ N=N_Train+N_Test
 Kernel=np.empty([N,N], dtype=float)
 Cache=np.empty([N, ],dtype=object)
 
-i=0
-for file in X_Train+X_Test:
-	Cache[i]=File2Pgrams(file)
-	norma=1+sum(Cache[i].values())
-	for pair in Cache[i].keys():
-		Cache[i][pair]/=norma
-	i=i+1
-	
-	
-	
-for i in range(N):
-	for j in range(i,N):
-		Kernel[i][j]=KernelFrom2ListsK3RN3L(Cache[i],Cache[j])
-		Kernel[j][i]=Kernel[i][j]
-
-#normalizare
-from math import sqrt
-for i in range(N):
-	for j in range(N):
-		if(i!=j):
-			Kernel[i][j]/=sqrt(Kernel[i][i]*Kernel[j][j]+1)
-
-for i in range(N):
-	Kernel[i][i]=1
-
-	
-Y_Train=np.array(Y_Train)
 
 from sklearn.svm import NuSVC
+from math import sqrt
+from sklearn.cross_validation import LeaveOneOut
+Y_Train=np.array(Y_Train)
 
-nu=0.1
-for _ in range(1):
-	clf = NuSVC(nu,kernel='precomputed', )#,#verbose =True,      shrinking=False,
+
+Predictii=[  []  for _ in range(N_Test)]
+Accs=[]
+ma=0;
+#Try all:
+for pgram in range(4,0,-1):#2 
+	for normalizare in [False,True]:#1
 	
-	# #Bun de kfold
-	#from sklearn.cross_validation import LeaveOneOut
-	# pr=[]
-	# loo = LeaveOneOut(N_Train)
-	# for train, test in loo:
-		# clf.fit(Kernel[np.ix_(train,train)], Y_Train[train])
-		# pr.append(clf.predict(Kernel[np.ix_(test,train)])==Y_Train[test])
-	# print(np.array(pr).mean())
+		
+		i=0
+		for file in X_Train+X_Test:
+			Cache[i]=File2Pgrams(file,pgram)
+			if normalizare:
+				norma=1+sum(Cache[i].values())
+				for pair in Cache[i].keys():
+					Cache[i][pair]/=norma
+				
+			i=i+1
 	
-	clf.fit(Kernel[0:N_Train,0:N_Train], Y_Train[0:N_Train])
-	AccTrain=(clf.predict(Kernel[0:N_Train,0:N_Train])==Y_Train[0:N_Train]).mean()
-	# AccTest=(clf.predict(Kernel[N_Train:,0:N_Train])==Y[N_Train:]).mean()
-	Preds=clf.predict(Kernel[N_Train:,0:N_Train])
-	for i in range(0,len(Preds)):
-		print(X_Test[i],'->',Dirs[Preds[i]])
-	AccTest=0
-	print('nu= ',nu,' acc pe train: ' ,AccTrain,' Acc pe test: ',AccTest)
-	nu*=0.8
+		# for kernelFunc in [KernelFrom2ListsK3RN3L,KernelFrom2ListsIntersect,KernelFrom2ListsSpectrum,KernelFrom2ListsPresence]:#3
+		for kernelFunc in [KernelFrom2ListsK3RN3L,KernelFrom2ListsIntersect]:#3
+			for i in range(N):
+				for j in range(i,N):
+					Kernel[i][j]=kernelFunc(Cache[i],Cache[j])
+					Kernel[j][i]=Kernel[i][j]
+			#normalizare
+			for i in range(N):
+				for j in range(N):
+					if(i!=j):
+						Kernel[i][j]/=sqrt(Kernel[i][i]*Kernel[j][j]+1)
+
+			for i in range(N):
+				Kernel[i][i]=1
+			for nu in [0.4,0.25,0.1,0.07]:#4
+				clf = NuSVC(nu,kernel='precomputed' )#,#verbose =True,      shrinking=False,
+				try:
+					#Bun de kfold
+					pr=[]
+					loo = LeaveOneOut(N_Train)
+					for train, test in loo:
+						clf.fit(Kernel[np.ix_(train,train)], Y_Train[train])
+						pr.append(clf.predict(Kernel[np.ix_(test,train)])==Y_Train[test])
+					print(pgram,normalizare,kernelFunc,nu,np.array(pr).mean())
+					
+					if np.array(pr).mean()>ma:
+						ma=np.array(pr).mean()
+						
+						m_norm=normalizare
+						m_pgram=pgram
+						m_func=kernelFunc
+						m_nu=nu
+						
+					if len(Accs)<=10 or np.array(pr).mean()>=np.array(Accs).mean():
+						print(len(Accs))
+						Accs.append( np.array(pr).mean() )
+						clf.fit(Kernel[0:N_Train,0:N_Train], Y_Train[0:N_Train])
+						Preds=clf.predict(Kernel[N_Train:,0:N_Train])
+						for i in range(0,len(Preds)):
+							Predictii[i].append(Dirs[Preds[i]])
+				except:
+					pass
+	
+print("Max acc: ",ma)
+print("Norm: ",m_norm)
+print("m_pgram: ",m_pgram)
+print("m_func: ",m_func)
+print("m_nu: ",m_nu)
+				
+
+				
+BestIndex=np.array([x for x in Accs]).argsort()[::-1][:10]
+
+
+
+for i in range(len(Predictii)):
+	Pred=np.array(Predictii[i])[BestIndex]
+	print(X_Test[i],'->',Counter(Pred).most_common(1)[0][0],' ',100.0*Counter(Pred).most_common(1)[0][1]/(len(Pred)),'%')
+			
+	
+	
