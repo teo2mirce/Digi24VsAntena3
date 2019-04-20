@@ -1,9 +1,9 @@
 #pyinstaller -F --hidden-import sklearn.neighbors.typedefs KC.py
 #http://textfiles.com/directory.html
 
+
 from collections import Counter
 import numpy as np
-import os
 
 
 def KernelFrom2ListsK3RN3L(A,B):
@@ -50,10 +50,10 @@ def KernelFrom2ListsSpectrum(A,B):
 	ret=0
 	if(len(A)<len(B)):
 		for pair in A.keys():
-			ret+=A[pair]*B[pair]
+			ret+=(1+A[pair])*(1+B[pair])
 	else:
 		for pair in B.keys():
-			ret+=A[pair]*B[pair]
+			ret+=(1+A[pair])*(1+B[pair])
 	return ret
 def KernelFrom2ListsPresence(A,B):
 	ret=0
@@ -63,7 +63,7 @@ def KernelFrom2ListsPresence(A,B):
 				ret+=1
 	else:
 		for pair in B.keys():
-			if(B[pair]!=0):
+			if(A[pair]!=0):
 				ret+=1
 	return ret
 def File2Pgrams(file,pgram=2):
@@ -75,7 +75,9 @@ def File2Pgrams(file,pgram=2):
 	return Counter([oneLongTweet[i:i + pgram] for i in range(0, len(oneLongTweet )-pgram +1 )])
 	
 
-Dirs=[entry for entry in os.listdir('.') if os.path.isdir(entry)]
+import os
+import sys
+Dirs=[entry for entry in os.listdir(sys.argv[1]) if os.path.isdir(sys.argv[1]+'/'+entry)]
 assert 'test' in Dirs
 
 X_Train=[]
@@ -83,12 +85,12 @@ Y_Train=[]
 X_Test=[]
 
 for counter,dir in enumerate(Dirs):
-	files=os.listdir(dir)
+	files=os.listdir(sys.argv[1]+'/'+dir)
 	for file in files:
 		if dir=='test':
-			X_Test.append(dir+'/'+file)
+			X_Test.append(sys.argv[1]+'/'+dir+'/'+file)
 		else:
-			X_Train.append(dir+'/'+file)
+			X_Train.append(sys.argv[1]+'/'+dir+'/'+file)
 			Y_Train.append(counter)
 
 N_Train=len(X_Train)
@@ -104,15 +106,21 @@ Cache=np.empty([N, ],dtype=object)
 
 from sklearn.svm import NuSVC
 from math import sqrt
-from sklearn.cross_validation import LeaveOneOut
+from sklearn.model_selection import LeaveOneOut
+# from sklearn.cross_validation import LeaveOneOut
 Y_Train=np.array(Y_Train)
 
 
+# import sklearn
+# print(sklearn.__version__)
+
+# print("merge",N)
 Predictii=[  []  for _ in range(N_Test)]
 Accs=[]
 ma=0;
 #Try all:
-for pgram in range(4,0,-1):#2 
+# for pgram in range(4,0,-1):#2 
+for pgram in range(1,5):#2 
 	for normalizare in [False,True]:#1
 	
 		
@@ -126,8 +134,8 @@ for pgram in range(4,0,-1):#2
 				
 			i=i+1
 	
-		# for kernelFunc in [KernelFrom2ListsK3RN3L,KernelFrom2ListsIntersect,KernelFrom2ListsSpectrum,KernelFrom2ListsPresence]:#3
-		for kernelFunc in [KernelFrom2ListsK3RN3L,KernelFrom2ListsIntersect]:#3
+		for kernelFunc in [KernelFrom2ListsK3RN3L,KernelFrom2ListsIntersect,KernelFrom2ListsSpectrum,KernelFrom2ListsPresence]:#3
+		# for kernelFunc in [KernelFrom2ListsK3RN3L,KernelFrom2ListsIntersect]:#3
 			for i in range(N):
 				for j in range(i,N):
 					Kernel[i][j]=kernelFunc(Cache[i],Cache[j])
@@ -142,32 +150,33 @@ for pgram in range(4,0,-1):#2
 				Kernel[i][i]=1
 			for nu in [0.4,0.25,0.1,0.07]:#4
 				clf = NuSVC(nu,kernel='precomputed' )#,#verbose =True,      shrinking=False,
-				try:
-					#Bun de kfold
-					pr=[]
-					loo = LeaveOneOut(N_Train)
-					for train, test in loo:
-						clf.fit(Kernel[np.ix_(train,train)], Y_Train[train])
-						pr.append(clf.predict(Kernel[np.ix_(test,train)])==Y_Train[test])
-					print(pgram,normalizare,kernelFunc,nu,np.array(pr).mean())
+				# try:#try-ul asta e pt ca pentru diferite nu-uri da exceptie
+				#Bun de kfold
+				pr=[]
+				loo = LeaveOneOut()
+				loo.get_n_splits(X_Train)
+				for train, test in loo.split(X_Train):
+					clf.fit(Kernel[np.ix_(train,train)], Y_Train[train])
+					pr.append(clf.predict(Kernel[np.ix_(test,train)])==Y_Train[test])
+				print(pgram,normalizare,kernelFunc,nu,np.array(pr).mean())
+				
+				if np.array(pr).mean()>ma:
+					ma=np.array(pr).mean()
 					
-					if np.array(pr).mean()>ma:
-						ma=np.array(pr).mean()
-						
-						m_norm=normalizare
-						m_pgram=pgram
-						m_func=kernelFunc
-						m_nu=nu
-						
-					if len(Accs)<=10 or np.array(pr).mean()>=np.array(Accs).mean():
-						print(len(Accs))
-						Accs.append( np.array(pr).mean() )
-						clf.fit(Kernel[0:N_Train,0:N_Train], Y_Train[0:N_Train])
-						Preds=clf.predict(Kernel[N_Train:,0:N_Train])
-						for i in range(0,len(Preds)):
-							Predictii[i].append(Dirs[Preds[i]])
-				except:
-					pass
+					m_norm=normalizare
+					m_pgram=pgram
+					m_func=kernelFunc
+					m_nu=nu
+					
+				if len(Accs)<=10 or np.array(pr).mean()>=np.array(Accs).mean():
+					# print(len(Accs))
+					Accs.append( np.array(pr).mean() )
+					clf.fit(Kernel[0:N_Train,0:N_Train], Y_Train[0:N_Train])
+					Preds=clf.predict(Kernel[N_Train:,0:N_Train])
+					for i in range(0,len(Preds)):
+						Predictii[i].append(Dirs[Preds[i]])
+				# except:
+					# pass
 	
 print("Max acc: ",ma)
 print("Norm: ",m_norm)
